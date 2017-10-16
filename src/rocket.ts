@@ -19,11 +19,14 @@ export class Rocket extends Line {
   destination: element;
 
   distance_to_destination: number;
+  // Score to survive in natural selection
+  selection_score: number;
 
   constructor(
     origin: element,
     destination: element,
-    height: number
+    height: number,
+    routine?: Routine
   ){
     let origin_point = origin.get2DCenter();
     let destination_point = destination.get2DCenter();
@@ -36,11 +39,16 @@ export class Rocket extends Line {
       height
     );
 
+    this.selection_score = 0;
     this.is_alive = true;
     this.origin = origin;
     this.destination = destination;
     this.count = 0;
-    this.routine = new Routine();
+    if(routine === undefined) {
+      this.routine = new Routine();
+    }else{
+      this.routine = routine;
+    }
 
     this.alive_radius = Math.sqrt(
       (origin_point.y - destination_point.y)**2 +
@@ -62,6 +70,10 @@ export class Rocket extends Line {
     this.acceleration[1] += force.y;
   }
 
+  calculateScore(){
+    this.selection_score = 1/this.distance_to_destination;
+  }
+
   update(){
     if(!this.has_landed){
       if(this.routine.points.length > this.count){
@@ -73,7 +85,6 @@ export class Rocket extends Line {
         this.is_alive = false
         return
       }
-
 
       let destination_center = this.destination.get2DCenter();
       let destination_radius = this.destination.getRadius();
@@ -111,6 +122,8 @@ export class Rocket extends Line {
           this.acceleration = [0, 0];
         }
       }
+
+      this.calculateScore();
     }
   }
 }

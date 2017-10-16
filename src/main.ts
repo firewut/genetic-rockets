@@ -23,17 +23,20 @@ function setUp(scene: Scene){
     'circle',
     {
       'cx': destination_path[0].x,
-      'cy': destination_path[0].y + min_side / 4,
+      'cy': height - min_side / 4,
       'radius': origin_radius
     }
   );
 
-  scene.render(100);
+  scene.origin = origin;
+  scene.destination = destination;
+
+  scene.render(50);
   scene.startActivity(
-    100,
-    25,
-    origin,
-    destination
+    50
+  );
+  scene.startRockets(
+    50
   );
 }
 

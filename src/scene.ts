@@ -1,11 +1,12 @@
 /// <reference path ="./typings/index.d.ts"/>
 
 'use strict';
-import { Dictionary, makeid } from './helpers';
+import { Dictionary, makeid, pickRandomFromArray } from './helpers';
 import { element, elementType } from './classes';
 import { Circle } from './circle';
 import { Line } from './line';
 import { Rocket } from './rocket';
+import { Routine } from './routines';
 
 export class Scene {
   canvas: svgjs.Element;
@@ -14,15 +15,17 @@ export class Scene {
   rockets: Rocket[];
 
   // Generation Information
-  generation_number: number;
+  origin: element;
+  destination: element;
   text_element: svgjs.Element;
+  generation_info: any[];
 
   // UI Settings
   min_side: number;
   rockets_count: number = 20;
 
   constructor(width: number, height: number, setUp: (_:Scene) => any) {
-    this.generation_number = 0;
+    this.generation_info = [];
     this.elements = [];
     this.rockets = [];
     this.svg_elements = {};
@@ -40,18 +43,37 @@ export class Scene {
     });
   }
 
-  updateGeneration(num: number){
+  updateGenerationInfo(){
+    let rockets_count = this.rockets.length;
+    var landed_rockets_count = 0;
+    for(let rocket of this.rockets){
+      if(rocket.has_landed){
+        landed_rockets_count += 1
+      }
+    }
+
+    this.generation_info.push([
+      landed_rockets_count
+    ])
+
+    var text = '';
+    for(var i = this.generation_info.length-1; i >= 0; i--){
+      text += `Generation ${i+1}: \
+        [${this.generation_info[i]} \/ ${rockets_count}] \
+      \n`
+    }
+
     if(this.text_element === undefined){
       this.text_element = this.canvas.text(
-        'Generation #' + num
+        text
       ).move(
         0, 0
       ).font({
         'family': 'Inconsolata',
-        'size': this.min_side / 25
+        'size': this.min_side / 40
       })
     }else{
-      this.text_element.text('Generation #' + num);
+      this.text_element.text(text);
     }
   }
 
@@ -155,9 +177,7 @@ export class Scene {
             // If this is a rocket - check it's status
             for(let rocket of this.rockets){
               if(rocket._id == element._id){
-                if(rocket.is_alive){
-
-                }else{
+                if(!rocket.is_alive){
                   this.removeElement(rocket._id);
                 }
               }
@@ -215,19 +235,12 @@ export class Scene {
   }
 
   startActivity(
-    interval: number,
-    rockets_count: number,
-    origin: element,
-    destination: element
+    interval: number
   ){
     let self = this;
-    self.generation_number += 1;
-    self.updateGeneration(self.generation_number);
-    self.start_rockets(
-      rockets_count,
-      origin,
-      destination
-    );
+    let rockets_pool = self.calcRocketsScores();
+    let routines = self.selectRocketsRoutines(rockets_pool);
+    self.startRockets(null, routines);
 
     let interval_id = setInterval(
       function(){
@@ -235,16 +248,9 @@ export class Scene {
         if(activity_finished){
           window.clearInterval(interval_id);
 
-          self.start_rockets(
-            rockets_count,
-            origin,
-            destination
-          );
+          self.updateGenerationInfo();
           self.startActivity(
-            interval,
-            rockets_count,
-            origin,
-            destination
+            interval
           );
         };
       },
@@ -252,49 +258,106 @@ export class Scene {
     );
   }
 
+  calcRocketsScores(){
+    var max_score = 0;
+    for(let rocket of this.rockets){
+      if(rocket.selection_score > max_score){
+        max_score = rocket.selection_score;
+      }
+    }
+
+    for(let rocket of this.rockets){
+      rocket.selection_score /= max_score; // Between 0 and 1
+    }
+
+    var rockets_pool = [];
+    for(let rocket of this.rockets){
+      let n = rocket.selection_score * 100;
+      for(let j = 0; j < n; j++){
+        rockets_pool.push(rocket)
+      }
+    }
+
+    return rockets_pool;
+  }
+
+  selectRocketsRoutines(rockets_pool: Rocket[]){
+    var routines = [];
+    for(let rocket of this.rockets){
+      let routineA = pickRandomFromArray(rockets_pool).routine;
+      let routineB = pickRandomFromArray(rockets_pool).routine;
+      let childRoutine = routineA.crossOver(routineB);
+
+      routines.push(childRoutine)
+    }
+
+    return routines;
+  }
+
   render(interval: number){
     setInterval(() => this.drawElements(), interval);
   }
 
-  start_rockets(
-    rockets_count: number,
-    origin: element,
-    destination: element
+  startRocket(rocket: Rocket){
+    let _line = this.addElement(
+      'line',
+      {
+        'x1': rocket.x1,
+        'y1': rocket.y1,
+        'x2': rocket.x2,
+        'y2': rocket.y2,
+        'width': rocket.width
+      },
+      rocket._id,
+      {
+        fill_color: 'rgba(0, 0, 0, .9)',
+        stroke_color: 'rgba(252, 98, 93, .7)',
+        font_color: 'rgba(255, 255, 255, 1)',
+      }
+    );
+    this.rockets.push(
+      rocket
+    );
+  }
+
+  startRockets(
+    rockets_count?: number,
+    routines?: Routine[]
   ){
+    for(let rocket of this.rockets){
+      this.removeElement(rocket._id);
+    }
+    this.rockets = [];
+
+    let rocket_height = this.min_side / 100;
+
     var rockets = [];
-    for (let i = 0; i < rockets_count; i++) {
-      let rocket_height = this.min_side / 100;
-      let rocket = new Rocket(
-        origin,
-        destination,
-        rocket_height,
-      );
-      rockets.push(
-        rocket
-      );
+    if(rockets_count > 0){
+      for (let i = 0; i < rockets_count; i++) {
+        let rocket = new Rocket(
+          this.origin,
+          this.destination,
+          rocket_height,
+        );
+        rockets.push(
+          rocket
+        );
+      }
+    }else if(routines.length > 0){
+      for(let routine of routines){
+        rockets.push(
+          new Rocket(
+            this.origin,
+            this.destination,
+            rocket_height,
+            routine
+          )
+        )
+      }
     }
 
     for (let i = 0; i < rockets.length; i++) {
-      let rocket = rockets[i];
-      let _line = this.addElement(
-        'line',
-        {
-          'x1': rocket.x1,
-          'y1': rocket.y1,
-          'x2': rocket.x2,
-          'y2': rocket.y2,
-          'width': rocket.width
-        },
-        rocket._id,
-        {
-          fill_color: 'rgba(0, 0, 0, .9)',
-          stroke_color: 'rgba(252, 98, 93, .7)',
-          font_color: 'rgba(255, 255, 255, 1)',
-        }
-      );
-      this.rockets.push(
-        rocket
-      );
+      this.startRocket(rockets[i]);
     }
   }
 }
