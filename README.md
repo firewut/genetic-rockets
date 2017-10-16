@@ -2,9 +2,7 @@
 
 # About
 
-Simple Genetic Algo demo.
-
-[Demo](https://firewut.github.io/genetic-rockets/)
+Simple Genetic Algorithm. [Demo](https://firewut.github.io/genetic-rockets/)
 
 ![Screenshot](screenshots/1.png)
 
