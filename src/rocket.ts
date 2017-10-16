@@ -3,15 +3,13 @@
 import { getRandomInt, getRandomArbitrary, pickRandomFromArray } from './helpers';
 import { Point2D, element } from './classes';
 import { Line } from './line';
-import { Circle } from './circle';
-
-
-let engines_count = 4;
+import { Routine } from './routines';
 
 export class Rocket extends Line {
-  engines: number[];
   velocity: number[];
   acceleration: number[];
+  routine: Routine;
+  count: number;
 
   has_landed: true;
   is_alive: boolean;
@@ -35,12 +33,15 @@ export class Rocket extends Line {
       origin_point.y - height,
       origin_point.x,
       origin_point.y,
-      height/5
+      height
     );
 
     this.is_alive = true;
     this.origin = origin;
     this.destination = destination;
+    this.count = 0;
+    this.routine = new Routine();
+
     this.alive_radius = Math.sqrt(
       (origin_point.y - destination_point.y)**2 +
       (origin_point.x - destination_point.x)**2
@@ -51,30 +52,29 @@ export class Rocket extends Line {
       (origin_point.x - destination_point.x)**2
     );
 
-
-    this.velocity = [
-      getRandomArbitrary(-1, 1),
-      getRandomArbitrary(-1, 1)
-      // 0, -1
-    ];
-    this.acceleration = [1, 1];
-
-    this.engines = [];
-    for (let i = 0; i < engines_count; i++) {
-      this.engines.push(
-        getRandomInt(0, 1)
-      );
-    }
+    // X, Y
+    this.velocity = [0, 0]
+    this.acceleration = [0, 0];
   }
 
-  applyForce(force: number){
-    for (let i = 0; i < this.acceleration.length; i++) {
-      this.acceleration[i] += force;
-    }
+  applyForce(force: Point2D){
+    this.acceleration[0] += force.x;
+    this.acceleration[1] += force.y;
   }
 
   update(){
     if(!this.has_landed){
+      if(this.routine.points.length > this.count){
+        this.applyForce(
+          this.routine.points[this.count]
+        );
+        this.count += 1;
+      }else{
+        this.is_alive = false
+        return
+      }
+
+
       let destination_center = this.destination.get2DCenter();
       let destination_radius = this.destination.getRadius();
 
@@ -100,11 +100,15 @@ export class Rocket extends Line {
         this.is_alive = away_from_origin <= this.alive_radius;
 
         if(this.is_alive){
-          this.applyForce(getRandomArbitrary(0, 1));
-          this.x1 += (this.velocity[0] * this.acceleration[0]);
-          this.y1 += (this.velocity[1] * this.acceleration[1]);
-          this.x2 += (this.velocity[0] * this.acceleration[0]);
-          this.y2 += (this.velocity[1] * this.acceleration[1]);
+          this.velocity = this.velocity.map(
+            (a, i) => a + this.acceleration[i]
+          );
+
+          this.x1 += this.velocity[0];
+          this.y1 += this.velocity[1];
+          this.x2 += this.velocity[0];
+          this.y2 += this.velocity[1];
+          this.acceleration = [0, 0];
         }
       }
     }

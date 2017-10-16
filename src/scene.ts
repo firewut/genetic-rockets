@@ -1,7 +1,7 @@
 /// <reference path ="./typings/index.d.ts"/>
 
 'use strict';
-import { Dictionary } from './helpers';
+import { Dictionary, makeid } from './helpers';
 import { element, elementType } from './classes';
 import { Circle } from './circle';
 import { Line } from './line';
@@ -13,11 +13,16 @@ export class Scene {
   svg_elements: Dictionary<svgjs.Element>;
   rockets: Rocket[];
 
+  // Generation Information
+  generation_number: number;
+  text_element: svgjs.Element;
+
   // UI Settings
   min_side: number;
   rockets_count: number = 20;
 
-  constructor(width: number, height: number) {
+  constructor(width: number, height: number, setUp: (_:Scene) => any) {
+    this.generation_number = 0;
     this.elements = [];
     this.rockets = [];
     this.svg_elements = {};
@@ -31,7 +36,23 @@ export class Scene {
       canvas.size(width, height, true);
 
       this.canvas = canvas.nested();
+      setUp(this);
     });
+  }
+
+  updateGeneration(num: number){
+    if(this.text_element === undefined){
+      this.text_element = this.canvas.text(
+        'Generation #' + num
+      ).move(
+        0, 0
+      ).font({
+        'family': 'Inconsolata',
+        'size': this.min_side / 25
+      })
+    }else{
+      this.text_element.text('Generation #' + num);
+    }
   }
 
   addElement(element_type: string, properties: any, id?: string, colors?: any){
@@ -115,7 +136,7 @@ export class Scene {
               path[1].x,
               path[1].y,
             ).attr({
-              'fill':colors['fill_color'],
+              'fill': colors['fill_color'],
               'stroke': colors['stroke_color'],
               'stroke-width': element.getWidth()
             });
@@ -200,9 +221,18 @@ export class Scene {
     destination: element
   ){
     let self = this;
+    self.generation_number += 1;
+    self.updateGeneration(self.generation_number);
+    self.start_rockets(
+      rockets_count,
+      origin,
+      destination
+    );
+
     let interval_id = setInterval(
       function(){
-        if(self.activity()){
+        let activity_finished = self.activity();
+        if(activity_finished){
           window.clearInterval(interval_id);
 
           self.start_rockets(
@@ -233,7 +263,7 @@ export class Scene {
   ){
     var rockets = [];
     for (let i = 0; i < rockets_count; i++) {
-      let rocket_height = this.min_side / 40;
+      let rocket_height = this.min_side / 100;
       let rocket = new Rocket(
         origin,
         destination,
@@ -258,7 +288,7 @@ export class Scene {
         rocket._id,
         {
           fill_color: 'rgba(0, 0, 0, .9)',
-          stroke_color: 'rgba(255, 0, 0, 1)',
+          stroke_color: 'rgba(252, 98, 93, .7)',
           font_color: 'rgba(255, 255, 255, 1)',
         }
       );
