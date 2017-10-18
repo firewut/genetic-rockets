@@ -1,55 +1,77 @@
-import { makeid, getRandomInt, getRandomArbitrary } from './helpers';
+import { makeid, getRandomInt, getRandomArbitrary, pickRandomFromArray } from './helpers';
 import { Point2D } from './classes';
+
+export class Direction {
+  angle: number;
+  distance: number;
+
+  constructor(angle?: number, distance?: number){
+    // this.angle = angle || pickRandomFromArray([
+    //   0, 90, 180, 270, 360,
+    //   -90, -180, -270, -360
+    // ]);
+    this.angle = angle || getRandomArbitrary(-180, 180);
+    this.distance = distance || getRandomInt(1, 10);
+  }
+
+  getNewPoint(point: Point2D){
+    let new_point = new Point2D(0, 0);
+
+    new_point.x = Math.round(
+      Math.cos(this.angle * Math.PI / 180) * this.distance + point.x
+    );
+    new_point.y = Math.round(
+      Math.sin(this.angle * Math.PI / 180) * this.distance + point.y
+    );
+
+    return new_point;
+  }
+}
 
 export class Routine {
   _id: string;
-  points: Point2D[];
+  directions: Direction[];
 
-  constructor(max_points?: number, points?: Point2D[]){
+  constructor(max_directions?: number, directions?: Direction[]){
     this._id = makeid();
-    this.points = [];
-    if(max_points === undefined){
-      max_points = 300;
+    this.directions = [];
+
+    if(max_directions === undefined){
+      max_directions = 100;
     }
 
-    if(points === undefined){
-      for(let i = 0; i < max_points; i++){
-        this.points[i] = new Point2D(
-          getRandomArbitrary(-1, 1),
-          getRandomArbitrary(-1, 1),
-        )
+    if(directions === undefined){
+      for(let i = 0; i < max_directions; i++){
+        this.directions[i] = new Direction()
       }
     }else{
-      this.points = points;
+      this.directions = directions;
     }
   }
 
   crossOver(routine: Routine){
-    var new_points = [];
+    var new_directions = [];
     var parents = [
-      this.points,
-      routine.points,
+      this.directions,
+      routine.directions,
     ]
 
-    for (var i = 0; i < routine.points.length; i++) {
-      new_points[i] = parents[
+    for (var i = 0; i < routine.directions.length; i++) {
+      new_directions[i] = parents[
         Math.round(
           Math.random()
         )
       ][i]
     }
 
-    return new Routine(0, new_points);
+    return new Routine(0, new_directions);
   }
 
   mutate(){
     let mutation_rate = 0.01;
-    for(let i = 0; i < this.points.length; i++) {
+    for(let i = 0; i < this.directions.length; i++) {
       if(getRandomArbitrary(0, 1) < mutation_rate){
-        this.points[i] = new Point2D(
-          getRandomArbitrary(-1, 1),
-          getRandomArbitrary(-1, 1),
-        )
+        this.directions[i] = new Direction()
       }
     }
   }

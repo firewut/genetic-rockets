@@ -13,6 +13,8 @@ import { Routine } from './routines';
 export class Scene {
   canvas: svgjs.Container;
   elements: element[];
+  svg_obstacles: svgjs.Shape[];
+  obstacles: element[];
   svg_elements: Dictionary<svgjs.Element>;
   rockets: Rocket[];
 
@@ -20,7 +22,7 @@ export class Scene {
   origin: element;
   destination: element;
   text_element: svgjs.Text;
-  generation_info: any[];
+  generation_info: any;
 
   // UI Settings
   center: Point2D;
@@ -28,7 +30,14 @@ export class Scene {
   rockets_count: number = 20;
 
   constructor(width: number, height: number, setUp: (_:Scene) => any) {
-    this.generation_info = [];
+    this.generation_info = {
+      'generation_number': 0,
+      'total_rockets': 0,
+      'rockets_landed': 0,
+      'max_rockets_landed': 0
+    };
+    this.obstacles = [];
+    this.svg_obstacles = [];
     this.elements = [];
     this.rockets = [];
     this.svg_elements = {};
@@ -51,24 +60,24 @@ export class Scene {
   }
 
   updateGenerationInfo(){
-    let rockets_count = this.rockets.length;
-    var landed_rockets_count = 0;
+    this.generation_info['generation_number'] += 1;
+    this.generation_info['total_rockets'] = this.rockets.length;
+    this.generation_info['rockets_landed'] = 0;
+
     for(let rocket of this.rockets){
       if(rocket.has_landed){
-        landed_rockets_count += 1
+        this.generation_info['rockets_landed'] += 1
       }
     }
-
-    this.generation_info.push([
-      landed_rockets_count
-    ])
-
-    var text = '';
-    for(var i = this.generation_info.length-1; i >= 0; i--){
-      text += `Generation ${i+1}: \
-        [${this.generation_info[i]} \/ ${rockets_count}] \
-      \n`
+    if(this.generation_info['rockets_landed'] > this.generation_info['max_rockets_landed']){
+      this.generation_info['max_rockets_landed'] = this.generation_info['rockets_landed'];
     }
+
+    let text = `Generation ${this.generation_info['generation_number']}: \n \
+      Landed: ${this.generation_info['rockets_landed']} \n \
+      Max Landed: ${this.generation_info['max_rockets_landed']} \n \
+      Total: ${this.rockets.length} \n \
+    `
 
     if(this.text_element === undefined){
       this.text_element = this.canvas.text(
@@ -77,7 +86,7 @@ export class Scene {
         0, 0
       ).font({
         'family': 'Inconsolata',
-        'size': this.min_side / 40
+        'size': this.min_side / 45
       })
     }else{
       this.text_element.text(text);
@@ -108,7 +117,6 @@ export class Scene {
           properties['y1'],
           properties['x2'],
           properties['y2'],
-          properties['width'],
           id,
           colors
         );
@@ -143,10 +151,18 @@ export class Scene {
                 'cy': center2d.y,
                 'fill': colors['fill_color'],
                 'stroke': colors['stroke_color'],
-                'stroke-width': element.getWidth()
+                'stroke-width': 1
             });
 
             this.svg_elements[element._id] = svg_element;
+
+            // If this is in obstacles
+            if(this.obstacles.indexOf(element) != -1){
+              this.svg_obstacles.push(
+                svg_element
+              )
+            }
+
           }else{
             // Redraw or move
             if(
@@ -170,9 +186,16 @@ export class Scene {
             ).attr({
               'fill': colors['fill_color'],
               'stroke': colors['stroke_color'],
-              'stroke-width': element.getWidth()
+              'stroke-width': 1
             });
             this.svg_elements[element._id] = svg_element;
+
+            // If this is in obstacles
+            if(this.obstacles.indexOf(element) != -1){
+              this.svg_obstacles.push(
+                svg_element
+              )
+            }
           }else{
             // Redraw or move
             if(
@@ -219,42 +242,19 @@ export class Scene {
     }
   }
 
-  orbitTrajectory(el: element, around: Point2D){
-    // let el_center = el.get2DCenter();
-    // let radius = Math.sqrt(
-    //   (el_center.x - around.x)**2 +
-    //   (el_center.y - around.y)**2
-    // )
-    //
-    // if(el.meta['ctr'] === undefined){
-    //   el.meta['ctr'] = 0;
-    // }
-    // if(el.meta['ctr'] == 360){
-    //   el.meta['ctr'] = 0;
-    // }
-    //
-    // let x = radius * Math.cos(el.meta['ctr'] * Math.PI / 180.0) + el_center.x;
-    // let y = radius * Math.cos(el.meta['ctr'] * Math.PI / 180.0) + el_center.y;
-    //
-    // el.meta['ctr'] += 1;
-    // console.log(radius, el.meta['ctr'])
-    // el.move([new Point2D(x,y)]);
-  }
-
   checkCrashes(){
     // Rocket crases anything
     for(let rocket of this.rockets){
       if(rocket.is_alive){
         let rocket_svg_element = this.svg_elements[rocket._id];
-        let rocket_x = [rocket.x1, rocket.x2];
-        let rocket_y = [rocket.y1, rocket.y2];
+        let rocket_x = [rocket.start.x, rocket.end.x];
+        let rocket_y = [rocket.start.y, rocket.end.y];
 
         for(let element of this.elements){
           var crash = false;
 
           let center2d = element.get2DCenter();
           let path = element.get2DPath();
-          let width = element.getWidth();
 
           let existing_svg_element = this.svg_elements[element._id];
           switch(element._type){
@@ -290,7 +290,6 @@ export class Scene {
   activity(){
     // Planets
     this.checkCrashes();
-    this.orbitTrajectory(this.destination, this.center);
 
     // Rockets
     var dead_rockets_count = 0;
@@ -368,8 +367,8 @@ export class Scene {
     var routines = [];
     if(rockets_pool.length > 0) {
       for(let rocket of this.rockets){
-        let routineA = pickRandomFromArray(rockets_pool).routine;
-        let routineB = pickRandomFromArray(rockets_pool).routine;
+        let routineA = pickRandomFromArray(rockets_pool).getRoutine();
+        let routineB = pickRandomFromArray(rockets_pool).getRoutine();
         let childRoutine = routineA.crossOver(routineB);
         childRoutine.mutate();
 
@@ -388,16 +387,15 @@ export class Scene {
     let _line = this.addElement(
       'line',
       {
-        'x1': rocket.x1,
-        'y1': rocket.y1,
-        'x2': rocket.x2,
-        'y2': rocket.y2,
-        'width': rocket.width
+        'x1': rocket.start.x,
+        'y1': rocket.start.y,
+        'x2': rocket.end.x,
+        'y2': rocket.end.y
       },
       rocket._id,
       {
-        fill_color: 'rgba(0, 0, 0, .9)',
-        stroke_color: 'rgba(252, 98, 93, .7)',
+        fill_color: 'rgba(0, 0, 0, 1)',
+        stroke_color: 'rgba(0, 0, 0, 1)',
         font_color: 'rgba(255, 255, 255, 1)',
       }
     );

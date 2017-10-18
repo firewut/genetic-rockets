@@ -10,35 +10,41 @@ export class Point2D {
   }
 
   add = function (point: Point2D) {
-      return new Point2D(this.x + point.x, this.y + point.y);
+      this.x += point.x;
+      this.y += point.y;
   };
 
   subtract = function (point: Point2D) {
-      return new Point2D(this.x - point.x, this.y - point.y);
+    this.x -= point.x;
+    this.y -= point.y;
   };
 
   multiply = function (point: Point2D) {
-      return new Point2D(this.x * point.x, this.y * point.y);
+    this.x *= point.x;
+    this.y *= point.y;
   };
 
   multiplyScalar = function (scalar: number) {
-      return new Point2D(this.x * scalar, this.y * scalar);
+    this.x *= scalar;
+    this.y *= scalar;
   };
 
   divide = function (point: Point2D) {
-      return new Point2D(this.x / point.x, this.y / point.y);
+    this.x /= point.x;
+    this.y /= point.y;
   };
 
   divideScalar = function (scalar: number) {
-      return new Point2D(this.x / scalar, this.y / scalar);
+    this.x /= scalar;
+    this.y /= scalar;
   };
 
   length = function () {
-      return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
+    return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
   };
 
   normalize = function () {
-      return this.divideScalar(this.length());
+    this.divideScalar(this.length());
   };
 }
 
@@ -70,6 +76,7 @@ export interface element {
   get2DCenter?: () => Point2D;
   getWidth?: () => number;
   getColors: () => any;
+  getWeight: () => number;
 
   move?: (_:Point2D[]) => any;
 }

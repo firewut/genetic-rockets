@@ -10,21 +10,25 @@ export class Circle {
   _id: string;
   _type: elementType;
   meta: any;
-  cx: number;
-  cy: number;
+  center: Point2D;
   radius: number;
-  width: number;
   colors: any;
+
+  weight: number;
 
   constructor(cx: number, cy: number, radius: number, id?: string, _colors?: any){
     this._id = id || makeid();
     this._type = elementType.Circle;
     this.meta = {};
-    this.cx = cx;
-    this.cy = cy;
+    this.center = new Point2D(cx, cy);
     this.radius = radius || default_circle_radius;
-    this.width = this.radius / 8;
     this.colors = _colors || colors;
+
+    this.weight = Math.PI * (this.radius**2);
+  }
+
+  getWeight(){
+    return this.weight;
   }
 
   getColors(){
@@ -36,23 +40,15 @@ export class Circle {
   }
 
   get2DCenter() {
-    return new Point2D(this.cx, this.cy);
+    return this.center;
   }
 
   move(points: Point2D[]){
-    this.cx = points[0].x;
-    this.cy = points[0].y;
-  }
-
-  getWidth(){
-    return this.width;
+    this.center = points[0];
   }
 
   get2DPath(){
-    var path: Point2D[] = [];
-    path.push(
-      new Point2D(this.cx, this.cy)
-    );
+    let path = [this.center];
     return path;
   }
 
