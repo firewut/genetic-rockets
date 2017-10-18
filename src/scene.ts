@@ -1,15 +1,17 @@
-/// <reference path ="./typings/index.d.ts"/>
+/// <reference path ="../node_modules/@types/jquery/index.d.ts"/>
+
+import * as SVG from "svg.js";
 
 'use strict';
 import { Dictionary, makeid, pickRandomFromArray } from './helpers';
-import { element, elementType } from './classes';
+import { element, elementType, Point2D } from './classes';
 import { Circle } from './circle';
 import { Line } from './line';
 import { Rocket } from './rocket';
 import { Routine } from './routines';
 
 export class Scene {
-  canvas: svgjs.Element;
+  canvas: svgjs.Container;
   elements: element[];
   svg_elements: Dictionary<svgjs.Element>;
   rockets: Rocket[];
@@ -17,10 +19,11 @@ export class Scene {
   // Generation Information
   origin: element;
   destination: element;
-  text_element: svgjs.Element;
+  text_element: svgjs.Text;
   generation_info: any[];
 
   // UI Settings
+  center: Point2D;
   min_side: number;
   rockets_count: number = 20;
 
@@ -33,10 +36,14 @@ export class Scene {
       width,
       height
     );
+    this.center = new Point2D(
+      this.min_side / 2,
+      this.min_side / 2
+    );
 
     $(() => {
       let canvas = SVG('canvas');
-      canvas.size(width, height, true);
+      canvas.size(width, height);
 
       this.canvas = canvas.nested();
       setUp(this);
@@ -146,7 +153,10 @@ export class Scene {
               center2d.x != existing_svg_element.cx() ||
               center2d.y != existing_svg_element.cy()
             ) {
-              existing_svg_element.move(center2d.x, center2d.y);
+              existing_svg_element.move(
+                center2d.x,
+                center2d.y
+              );
             }
           }
           break;
@@ -209,7 +219,80 @@ export class Scene {
     }
   }
 
+  orbitTrajectory(el: element, around: Point2D){
+    // let el_center = el.get2DCenter();
+    // let radius = Math.sqrt(
+    //   (el_center.x - around.x)**2 +
+    //   (el_center.y - around.y)**2
+    // )
+    //
+    // if(el.meta['ctr'] === undefined){
+    //   el.meta['ctr'] = 0;
+    // }
+    // if(el.meta['ctr'] == 360){
+    //   el.meta['ctr'] = 0;
+    // }
+    //
+    // let x = radius * Math.cos(el.meta['ctr'] * Math.PI / 180.0) + el_center.x;
+    // let y = radius * Math.cos(el.meta['ctr'] * Math.PI / 180.0) + el_center.y;
+    //
+    // el.meta['ctr'] += 1;
+    // console.log(radius, el.meta['ctr'])
+    // el.move([new Point2D(x,y)]);
+  }
+
+  checkCrashes(){
+    // Rocket crases anything
+    for(let rocket of this.rockets){
+      if(rocket.is_alive){
+        let rocket_svg_element = this.svg_elements[rocket._id];
+        let rocket_x = [rocket.x1, rocket.x2];
+        let rocket_y = [rocket.y1, rocket.y2];
+
+        for(let element of this.elements){
+          var crash = false;
+
+          let center2d = element.get2DCenter();
+          let path = element.get2DPath();
+          let width = element.getWidth();
+
+          let existing_svg_element = this.svg_elements[element._id];
+          switch(element._type){
+            case elementType.Circle:
+              let element_radius = element.getRadius();
+
+              for(let i = 0; i < rocket_x.length; i++){
+                let distance = Math.sqrt(
+                  (rocket_x[i] - center2d.x)**2 +
+                  (rocket_y[i] - center2d.y)**2
+                )
+                if(distance < element_radius){
+                  crash = true;
+                }
+              }
+              break;
+            case elementType.Line:
+              // todo: this must be fixed
+
+              break;
+            default:
+              break;
+          }
+
+          if(crash){
+            rocket.crash(element);
+          }
+        }
+      }
+    }
+  }
+
   activity(){
+    // Planets
+    this.checkCrashes();
+    this.orbitTrajectory(this.destination, this.center);
+
+    // Rockets
     var dead_rockets_count = 0;
     var landed_rockets_count = 0;
 
@@ -283,12 +366,15 @@ export class Scene {
 
   selectRocketsRoutines(rockets_pool: Rocket[]){
     var routines = [];
-    for(let rocket of this.rockets){
-      let routineA = pickRandomFromArray(rockets_pool).routine;
-      let routineB = pickRandomFromArray(rockets_pool).routine;
-      let childRoutine = routineA.crossOver(routineB);
+    if(rockets_pool.length > 0) {
+      for(let rocket of this.rockets){
+        let routineA = pickRandomFromArray(rockets_pool).routine;
+        let routineB = pickRandomFromArray(rockets_pool).routine;
+        let childRoutine = routineA.crossOver(routineB);
+        childRoutine.mutate();
 
-      routines.push(childRoutine)
+        routines.push(childRoutine)
+      }
     }
 
     return routines;

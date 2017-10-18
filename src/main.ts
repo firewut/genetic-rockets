@@ -7,23 +7,33 @@ let height = window.innerHeight;
 let min_side = Math.min(width, height);
 
 function setUp(scene: Scene){
-  let destination_radius = min_side / 25;
-  let destination = scene.addElement(
+  let sun = scene.addElement(
     'circle',
     {
       'cx': width / 2,
-      'cy': min_side / 10,
+      'cy': min_side / 2,
+      'radius': min_side / 8
+    }
+  );
+  let sun_center = sun.get2DCenter();
+  let sun_radius = sun.getRadius();
+
+  let destination_radius = sun_radius / 5;
+  let destination = scene.addElement(
+    'circle',
+    {
+      'cx': sun_center.x + sun_radius + destination_radius,
+      'cy': sun_center.y + sun_radius + destination_radius,
       'radius': destination_radius
     }
   );
 
-  let destination_path = destination.get2DPath();
-  let origin_radius = min_side / 30;
+  let origin_radius = sun_radius / 3;
   let origin = scene.addElement(
     'circle',
     {
-      'cx': destination_path[0].x,
-      'cy': height - min_side / 4,
+      'cx': sun_center.x - sun_radius - origin_radius,
+      'cy': sun_center.y - sun_radius - origin_radius,
       'radius': origin_radius
     }
   );

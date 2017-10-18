@@ -29,13 +29,15 @@ export class Rocket extends Line {
     routine?: Routine
   ){
     let origin_point = origin.get2DCenter();
+    let origin_radius = origin.getRadius();
     let destination_point = destination.get2DCenter();
+    let destination_radius = destination.getRadius();
 
     super(
-      origin_point.x,
-      origin_point.y - height,
-      origin_point.x,
-      origin_point.y,
+      origin_point.x + origin_radius,
+      origin_point.y + origin_radius,
+      origin_point.x + origin_radius + height,
+      origin_point.y + origin_radius,
       height
     );
 
@@ -63,6 +65,15 @@ export class Rocket extends Line {
     // X, Y
     this.velocity = [0, 0]
     this.acceleration = [0, 0];
+  }
+
+  crash(el: element){
+    if(el === this.destination){
+      this.has_landed = true;
+      this.is_alive = true;
+    }else{
+      this.is_alive = false;
+    }
   }
 
   applyForce(force: Point2D){
@@ -97,9 +108,9 @@ export class Rocket extends Line {
         this.distance_to_destination = away_from_destination;
       }
 
-      if(away_from_destination <= destination_radius){
-        this.has_landed = true;
-      }else{
+      // if(away_from_destination <= destination_radius){
+      //   this.has_landed = true;
+      // }else{
         // Check if we are further than `this.alive_radius`
         let origin_center = this.origin.get2DCenter();
         let origin_radius = this.origin.getRadius();
@@ -121,7 +132,7 @@ export class Rocket extends Line {
           this.y2 += this.velocity[1];
           this.acceleration = [0, 0];
         }
-      }
+      // }
 
       this.calculateScore();
     }

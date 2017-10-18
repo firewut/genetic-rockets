@@ -9,6 +9,7 @@ Simple Genetic Algorithm. [Demo](https://firewut.github.io/genetic-rockets/)
 # Execute
 
 ```
+npm install .
 gulp typescript
 open dist/index.html
 ```

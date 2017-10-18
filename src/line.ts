@@ -9,6 +9,7 @@ let default_line_width = 1;
 export class Line {
   _id: string;
   _type: elementType;
+  meta: any;
   x1: number;
   y1: number;
   x2: number;
@@ -19,6 +20,7 @@ export class Line {
   constructor(x1: number, y1: number, x2: number, y2: number, width: number, id?:string, _colors?: any){
     this._id = id || makeid();
     this._type = elementType.Line;
+    this.meta = {};
     this.x1 = x1;
     this.y1 = y1;
     this.x2 = x2;

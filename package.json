@@ -1,0 +1,13 @@
+{
+  "name": "DNA Rockets evolution",
+  "dependencies": {
+    "@types/jquery": "^3.2.15",
+    "browserify": "^14.4.0",
+    "gulp": "^3.9.1",
+    "gulp-watch": "^4.3.11",
+    "kld-intersections": "^0.3.1",
+    "svg.js": "^2.6.3",
+    "tsify": "^3.0.3",
+    "vinyl-source-stream": "^1.1.0"
+  }
+}

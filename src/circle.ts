@@ -9,6 +9,7 @@ let default_circle_radius = 10;
 export class Circle {
   _id: string;
   _type: elementType;
+  meta: any;
   cx: number;
   cy: number;
   radius: number;
@@ -18,6 +19,7 @@ export class Circle {
   constructor(cx: number, cy: number, radius: number, id?: string, _colors?: any){
     this._id = id || makeid();
     this._type = elementType.Circle;
+    this.meta = {};
     this.cx = cx;
     this.cy = cy;
     this.radius = radius || default_circle_radius;

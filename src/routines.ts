@@ -1,19 +1,21 @@
-import { getRandomInt, getRandomArbitrary } from './helpers';
+import { makeid, getRandomInt, getRandomArbitrary } from './helpers';
 import { Point2D } from './classes';
 
 let max_points = 300;
 
 export class Routine {
+  _id: string;
   points: Point2D[];
 
   constructor(points?: Point2D[]){
+    this._id = makeid();
     this.points = [];
 
     if(points === undefined){
       for(let i = 0; i < max_points; i++){
         this.points[i] = new Point2D(
-          getRandomArbitrary(-2, 2),
-          getRandomArbitrary(-2, 2),
+          getRandomArbitrary(-1, 1),
+          getRandomArbitrary(-1, 1),
         )
       }
     }else{
@@ -34,5 +36,17 @@ export class Routine {
     }
 
     return new Routine(new_points);
+  }
+
+  mutate(){
+    let mutation_rate = 0.01;
+    for(let i = 0; i < this.points.length; i++) {
+      if(getRandomArbitrary(0, 1) < mutation_rate){
+        this.points[i] = new Point2D(
+          getRandomArbitrary(-1, 1),
+          getRandomArbitrary(-1, 1),
+        )
+      }
+    }
   }
 }
