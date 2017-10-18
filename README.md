@@ -4,6 +4,8 @@
 
 Simple Genetic Algorithm. [Demo](https://firewut.github.io/genetic-rockets/)
 
+Inspired by [Smart Rockets in p5.js](https://www.youtube.com/watch?v=bGz7mv2vD6g)
+
 ![Screenshot](screenshots/1.png)
 
 # Execute

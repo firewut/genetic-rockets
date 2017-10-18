@@ -1,15 +1,16 @@
 import { makeid, getRandomInt, getRandomArbitrary } from './helpers';
 import { Point2D } from './classes';
 
-let max_points = 300;
-
 export class Routine {
   _id: string;
   points: Point2D[];
 
-  constructor(points?: Point2D[]){
+  constructor(max_points?: number, points?: Point2D[]){
     this._id = makeid();
     this.points = [];
+    if(max_points === undefined){
+      max_points = 300;
+    }
 
     if(points === undefined){
       for(let i = 0; i < max_points; i++){
@@ -25,17 +26,20 @@ export class Routine {
 
   crossOver(routine: Routine){
     var new_points = [];
+    var parents = [
+      this.points,
+      routine.points,
+    ]
 
-    let rand_point = getRandomInt(0, routine.points.length)
-    for(let i = 0; i < routine.points.length; i++) {
-      if( i > rand_point ){
-        new_points[i] = this.points[i];
-      }else{
-        new_points[i] = routine.points[i];
-      }
+    for (var i = 0; i < routine.points.length; i++) {
+      new_points[i] = parents[
+        Math.round(
+          Math.random()
+        )
+      ][i]
     }
 
-    return new Routine(new_points);
+    return new Routine(0, new_points);
   }
 
   mutate(){

@@ -46,21 +46,24 @@ export class Rocket extends Line {
     this.origin = origin;
     this.destination = destination;
     this.count = 0;
-    if(routine === undefined) {
-      this.routine = new Routine();
-    }else{
-      this.routine = routine;
-    }
 
     this.alive_radius = Math.sqrt(
       (origin_point.y - destination_point.y)**2 +
       (origin_point.x - destination_point.x)**2
-    ) * 1.5;
+    ) * 1.2;
 
     this.distance_to_destination = Math.sqrt(
       (origin_point.y - destination_point.y)**2 +
       (origin_point.x - destination_point.x)**2
     );
+
+    if(routine === undefined) {
+      // Calculate amount of points to achieve the destination
+      let routines_count = this.distance_to_destination;
+      this.routine = new Routine(routines_count);
+    }else{
+      this.routine = routine;
+    }
 
     // X, Y
     this.velocity = [0, 0]
@@ -71,8 +74,10 @@ export class Rocket extends Line {
     if(el === this.destination){
       this.has_landed = true;
       this.is_alive = true;
+      this.selection_score *= 10;
     }else{
       this.is_alive = false;
+      this.selection_score /= 10;
     }
   }
 
@@ -108,31 +113,29 @@ export class Rocket extends Line {
         this.distance_to_destination = away_from_destination;
       }
 
-      // if(away_from_destination <= destination_radius){
-      //   this.has_landed = true;
-      // }else{
-        // Check if we are further than `this.alive_radius`
-        let origin_center = this.origin.get2DCenter();
-        let origin_radius = this.origin.getRadius();
 
-        let away_from_origin = Math.sqrt(
-          (this.y1 - origin_center.y)**2 +
-          (this.x1 - origin_center.x)**2
+      // Check if we are further than `this.alive_radius`
+      let origin_center = this.origin.get2DCenter();
+      let origin_radius = this.origin.getRadius();
+
+      let away_from_origin = Math.sqrt(
+        (this.y1 - origin_center.y)**2 +
+        (this.x1 - origin_center.x)**2
+      );
+      this.is_alive = away_from_origin <= this.alive_radius;
+
+      if(this.is_alive){
+        this.velocity = this.velocity.map(
+          (a, i) => a + this.acceleration[i]
         );
-        this.is_alive = away_from_origin <= this.alive_radius;
 
-        if(this.is_alive){
-          this.velocity = this.velocity.map(
-            (a, i) => a + this.acceleration[i]
-          );
+        this.x1 += this.velocity[0];
+        this.y1 += this.velocity[1];
+        this.x2 += this.velocity[0];
+        this.y2 += this.velocity[1];
+        this.acceleration = [0, 0];
+      }
 
-          this.x1 += this.velocity[0];
-          this.y1 += this.velocity[1];
-          this.x2 += this.velocity[0];
-          this.y2 += this.velocity[1];
-          this.acceleration = [0, 0];
-        }
-      // }
 
       this.calculateScore();
     }
