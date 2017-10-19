@@ -51,7 +51,7 @@ export class Rocket extends Line {
     );
 
     // Maybe we need to increase this
-    this.fuel = Math.round(this.distance_to_destination);
+    this.fuel = Math.round(this.distance_to_destination) * 2;
 
     if(routine === undefined) {
       // Calculate amount of points to achieve the destination
@@ -115,18 +115,15 @@ export class Rocket extends Line {
   update(){
     if(!this.has_landed && this.is_alive){
       if(this._count < this.routine.directions.length){
-        this.fuel -= 1;
-        // let next_direction = this.lookupNextRoutineDirection();
-        // if(next_direction !== undefined){
-        //   let next_start = this.start;
-        //   next_start.add(next_direction);
-        //
-        //   // this.fuel -= Math.sqrt(
-        //   //   (this.start.x - next_start.x)**2 +
-        //   //   (this.start.y - next_start.y)**2
-        //   // );
-        //   // Do not check fuel here, we may plane :)
-        // }
+        let next_direction = this.lookupNextRoutineDirection();
+        if(next_direction !== undefined){
+          let next_start = next_direction.getNewPoint(this.start);
+
+          this.fuel -= Math.sqrt(
+            (this.start.x - next_start.x)**2 +
+            (this.start.y - next_start.y)**2
+          );
+        }
       }else{
         this.is_alive = false
       }

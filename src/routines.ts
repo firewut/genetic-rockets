@@ -1,17 +1,17 @@
 import { makeid, getRandomInt, getRandomArbitrary, pickRandomFromArray } from './helpers';
 import { Point2D } from './classes';
+import { constants } from './constants';
 
 export class Direction {
   angle: number;
   distance: number;
 
   constructor(angle?: number, distance?: number){
-    // this.angle = angle || pickRandomFromArray([
-    //   0, 90, 180, 270, 360,
-    //   -90, -180, -270, -360
-    // ]);
-    this.angle = angle || getRandomArbitrary(-180, 180);
-    this.distance = distance || getRandomInt(1, 10);
+    this.angle = angle || getRandomInt(-360, 360);
+    this.distance = distance || getRandomInt(
+      1,
+      constants['pixels_per_fuel']
+    );
   }
 
   getNewPoint(point: Point2D){

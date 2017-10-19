@@ -1,6 +1,7 @@
 import { Scene } from './scene';
 import { Rocket } from './rocket';
 import { Point2D } from './classes';
+import { constants } from './constants';
 
 let width = window.innerWidth;
 let height = window.innerHeight;
@@ -23,7 +24,7 @@ function setUp(scene: Scene){
     'circle',
     {
       'cx': big_obstacle_center.x + big_obstacle_radius + destination_radius,
-      'cy': big_obstacle_center.y - big_obstacle_radius + destination_radius,
+      'cy': big_obstacle_center.y + big_obstacle_radius + destination_radius,
       'radius': destination_radius
     }
   );
@@ -46,12 +47,12 @@ function setUp(scene: Scene){
     origin
   ]
 
-  scene.render(10);
+  scene.render(constants['tick_interval_ms']);
   scene.startActivity(
-    10
+    constants['tick_interval_ms']
   );
   scene.startRockets(
-    50
+    constants['rockets_count']
   );
 }
 
